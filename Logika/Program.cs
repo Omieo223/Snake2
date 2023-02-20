@@ -5,13 +5,48 @@ namespace Logika
 {
     internal class Program
     {
-        static public Mapa? graniceMapy;
+        static public Mapa? rozmiarMapy;
+
+        static void test()
+        {
+            int ilerazy = 0;
+
+            bool posiłek = false;
+            for (int i = 0; i < 10; i++)
+            {
+                var decydujacyPunkt = Lodowka.Generowanieposilku(rozmiarMapy);
+                posiłek = SprawdzanieJedzenia.czywGranicy(rozmiarMapy.GraniceMapy, decydujacyPunkt);
+                if (posiłek == false)
+                {
+                    ilerazy++;
+                }
+            }
+
+            Console.WriteLine("tyle razy bylo poza granicami: " + ilerazy);
+        }
         static void Main(string[] args)
         {
             Console.CursorVisible = false;
 
-            graniceMapy = new Mapa(20, 20);
-            NamalujGranic(new Point (graniceMapy.szerokoscMapy, graniceMapy.wysokoscMapy));
+            rozmiarMapy = new Mapa(20, 20);
+            test();
+
+            NamalujGranic(new Point (rozmiarMapy.szerokoscMapy, rozmiarMapy.wysokoscMapy));
+
+            Point nowejedzenie = Point.Empty;
+            bool posiłek = false;
+            while ( posiłek == false)
+            {
+                var decydujacyPunkt = Lodowka.Generowanieposilku(rozmiarMapy);
+                posiłek = SprawdzanieJedzenia.czywGranicy(rozmiarMapy.GraniceMapy, decydujacyPunkt);
+                if(posiłek == true)
+                {
+                    nowejedzenie = decydujacyPunkt;
+                }
+            }
+        
+            NarysujPosilek(nowejedzenie);
+
 
             Task.Run(OdczytywaniePrzycisku);
 
@@ -22,12 +57,12 @@ namespace Logika
         static async void zebyCzekalo()
         {
             //zeby nie wyrzucalo ostrzezen ze graniceMapy moga byc null'em
-            if (graniceMapy is null)
+            if (rozmiarMapy is null)
                 return;
 
             while (true)
             {
-                await Task.Delay(1000); // poczekać
+                await Task.Delay(800);// poczekać
                                         //Console.WriteLine(kierunek);
 
                 switch (kierunek)
@@ -52,18 +87,28 @@ namespace Logika
                 if (wspGlowy.X < 0)
                     wspGlowy = new Point(0, wspGlowy.Y);
 
-                WyczyscKonsole(ostaniaPozycjaGlowy, ostaniaPozycjaJedzenia);
+                WyczyscKonsole(ostaniaPozycjaGlowy);
                 
-                var decydujacyPunkt = Lodowka.Generowanieposilku(graniceMapy);
+                //var decydujacyPunkt = Lodowka.Generowanieposilku(graniceMapy);
+
 
                 NarysujGlowe(wspGlowy);
-                NarysujPosilek(decydujacyPunkt);
 
                 // zapisz ostanie pozycje gdzie byly elementy aby pozniej moc je wyczyscic na konsoli
                 ostaniaPozycjaGlowy = wspGlowy;
-                ostaniaPozycjaJedzenia = decydujacyPunkt;
+                var glowa = SprawdzanieJedzenia.czywGranicy(rozmiarMapy.GraniceMapy, wspGlowy);
+                if (glowa == false)
+                {
+                    break;
+                }
+                if(ostaniaPozycjaGlowy==ostaniaPozycjaJedzenia)
+                {
+                    Console.WriteLine("wygrana");
+                    break;
+                }
 
             }
+            Console.WriteLine("game over");
         }
         static Point ostaniaPozycjaGlowy = Point.Empty;
         static Point ostaniaPozycjaJedzenia = Point.Empty;
@@ -78,6 +123,8 @@ namespace Logika
         {
             Console.SetCursorPosition(decydujacyPunkt.X, decydujacyPunkt.Y);
             Console.Write('0');
+            ostaniaPozycjaJedzenia = decydujacyPunkt;
+
         }
         public static void NamalujGranic(Point granica)
         {
